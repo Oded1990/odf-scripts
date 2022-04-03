@@ -112,8 +112,15 @@ def run_fio():
     block_size_number = str(input("Enter block size [only number in K] (4K) : ") or "4")
     block_size = f"{block_size_number}K"
     jobs_num = str(input("Enter number of jobs [only number] (1) : ") or "1")
-    cmd = f"oc -n {project_name} rsh {pod_name} fio --name=fio-rand-readwrite --filename=/mnt/fio-rand-readwrite " \
-          f"--readwrite={rw_mode} --bs={block_size} --direct=0 --numjobs={jobs_num}" \
-          f" --time_based=1 --runtime=60 --size=1GB --iodepth=4 --invalidate=1 --fsync_on_close=1 " \
-          f"--rwmixread=75 --ioengine=libaio --output-format=json"
+    run_time = str(input("Enter runtime (100 sec) [only number] : ") or "100")
+    file_size_number = str(input("Enter file size (2GB) [only number] : ") or "2")
+    file_size = f"{file_size_number}GB"
+    is_verify = str(input("Add verify flag? (Yes/No): ") or "Yes")
+    verify = "--verify=crc32c" if "y" in is_verify.lower() else ""
+    cmd = (
+        f"oc -n {project_name} rsh {pod_name} fio --name=fio-rand-readwrite --filename=/mnt/fio-rand-readwrite "
+        f"--readwrite={rw_mode} --bs={block_size} --direct=0 --numjobs={jobs_num}"
+        f" --time_based=1 --runtime={run_time} --size={file_size} --iodepth=4 --invalidate=1 --fsync_on_close=1 "
+        f"--rwmixread=75 --ioengine=libaio {verify} --output-format=json"
+    )
     send_cmd(cmd)

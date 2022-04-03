@@ -16,11 +16,11 @@ log.addHandler(stream)
 
 
 def send_cmd(cmd=None, print_cmd=True, print_output=True):
-    if print_cmd:
-        logging.info(cmd)
+    # if print_cmd:
+    #     logging.info(cmd)
     returned_text = subprocess.check_output(cmd, shell=True, universal_newlines=True)
     if print_output:
-        logging.info(returned_text)
+        log.info(returned_text)
     return returned_text
 
 
