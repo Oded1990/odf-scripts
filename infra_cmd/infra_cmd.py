@@ -11,13 +11,11 @@ from pathlib import Path
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 stream = logging.StreamHandler(sys.stdout)
-stream.setLevel(logging.DEBUG)
-log.addHandler(stream)
 
 
-def send_cmd(cmd=None, print_cmd=True, print_output=True):
-    # if print_cmd:
-    #     logging.info(cmd)
+def send_cmd(cmd=None, print_cmd=False, print_output=True):
+    if print_cmd:
+        logging.info(cmd)
     returned_text = subprocess.check_output(cmd, shell=True, universal_newlines=True)
     if print_output:
         log.info(returned_text)

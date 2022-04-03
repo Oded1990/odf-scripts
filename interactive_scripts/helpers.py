@@ -123,4 +123,4 @@ def run_fio():
         f" --time_based=1 --runtime={run_time} --size={file_size} --iodepth=4 --invalidate=1 --fsync_on_close=1 "
         f"--rwmixread=75 --ioengine=libaio {verify} --output-format=json"
     )
-    send_cmd(cmd)
+    send_cmd(cmd=cmd, print_cmd=True)
