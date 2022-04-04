@@ -23,7 +23,6 @@ def create_new_prject():
 
 def create_pvc(project_name=None):
     pvc_name = str(input("Enter pvc name (pvc-test) : ") or "pvc-test")
-    print(pvc_name)
     pvc_mode_number = str(
         input(
             "Choose pvc access Mode (RWO)\n"
@@ -40,12 +39,10 @@ def create_pvc(project_name=None):
         pvc_mode = "ReadOnlyMany"
     else:
         pvc_mode = "ReadWriteMany"
-    print(pvc_mode)
     pvc_capacity_number = str(
         input("Enter pvc capacity [only number] in Gi (5Gi) : ") or "5"
     )
     pvc_capacity = f"{pvc_capacity_number}Gi"
-    print(pvc_capacity)
     storage_class_name_number = str(
         input(
             "Choose storageclass name or write the sc name "
@@ -63,7 +60,6 @@ def create_pvc(project_name=None):
         storage_class_name = "ocs-storagecluster-cephfs"
     else:
         storage_class_name = storage_class_name_number
-    print(storage_class_name)
 
     pvc_dic = yaml_to_dict("configurations/pvc.yaml")
     pvc_dic["metadata"]["name"] = pvc_name
@@ -82,11 +78,10 @@ def create_pvc(project_name=None):
         expected_string="Bound",
         expected_error=f"pvc {pvc_name} does not on Bound state",
     )
+    return pvc_name
 
 
-def create_pref_pod():
-    project_name = str(input("Enter project name (fio-test) : ") or "fio-test")
-    pvc_name = str(input("Enter pvc name (pvc-test) : ") or "pvc-test")
+def create_pref_pod(project_name, pvc_name):
     pod_name = str(input("Enter pod name (pod-test) : ") or "pod-test")
     pod_dic = yaml_to_dict("configurations/perf_pod.yaml")
     pod_dic["metadata"]["namespace"] = project_name
@@ -103,11 +98,10 @@ def create_pref_pod():
         expected_string="Running",
         expected_error=f"pod {pod_name} does not on Running state",
     )
+    return pod_name
 
 
-def run_fio():
-    project_name = str(input("Enter project name (fio-test) : ") or "fio-test")
-    pod_name = str(input("Enter pod name (pod-test) : ") or "pod-test")
+def run_fio(project_name, pod_name):
     rw_mode = str(input("Enter readwrite mode (randrw) : ") or "randrw")
     block_size_number = str(input("Enter block size [only number in K] (4K) : ") or "4")
     block_size = f"{block_size_number}K"
