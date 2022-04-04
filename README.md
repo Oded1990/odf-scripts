@@ -3,7 +3,7 @@ git clone https://github.com/Oded1990/odf-scripts.git
 
 cd odf-scripts
 
-export PYTHONPATH="${PYTHONPATH}:/path/to/your/project/"
+export PYTHONPATH="/path/to/your/project/"
 
 python3 -m venv venv
 
