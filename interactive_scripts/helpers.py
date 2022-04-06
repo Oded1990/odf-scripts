@@ -118,3 +118,19 @@ def run_fio(project_name, pod_name):
         f"--rwmixread=75 --ioengine=libaio {verify} --output-format=json"
     )
     send_cmd(cmd=cmd, print_cmd=True)
+    return pod_name
+
+
+def delete_pod(project_name, pod_name):
+    cmd = f"oc delete pod {pod_name} -n {project_name} --force"
+    send_cmd(cmd=cmd, print_cmd=True)
+
+
+def delete_pvc(project_name, pvc_name):
+    cmd = f"oc delete pvc {pvc_name} -n {project_name}"
+    send_cmd(cmd=cmd, print_cmd=True)
+
+
+def delete_project(project_name):
+    cmd = f"oc delete project {project_name}"
+    send_cmd(cmd=cmd, print_cmd=True)
