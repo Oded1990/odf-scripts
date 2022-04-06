@@ -134,3 +134,27 @@ def delete_pvc(project_name, pvc_name):
 def delete_project(project_name):
     cmd = f"oc delete project {project_name}"
     send_cmd(cmd=cmd, print_cmd=True)
+
+
+def get_ocp_version():
+    cmd = f"oc version"
+    version_output = send_cmd(cmd=cmd, print_cmd=True)
+    return version_output.splitlines()[1]
+
+
+def get_ocs_version():
+    cmd = f"oc describe csv odf-operator.v4.10.0 -n openshift-storage | grep full_version="
+    version_output = send_cmd(cmd=cmd, print_cmd=True)
+    return version_output.split()[1]
+
+
+def get_ceph_tool_pod_name():
+    cmd = f"oc get pods -n openshift-storage | grep rook-ceph-tools-"
+    tool_pod = send_cmd(cmd=cmd, print_cmd=True)
+    return tool_pod.split()[0]
+
+
+def get_ceph_versions():
+    tool_pod_name = get_ceph_tool_pod_name()
+    cmd = f"oc rsh -n openshift-storage {tool_pod_name} ceph versions"
+    return send_cmd(cmd=cmd, print_cmd=True)
