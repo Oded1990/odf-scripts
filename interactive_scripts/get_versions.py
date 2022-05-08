@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from interactive_scripts import helpers
+from helpers import helpers
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)

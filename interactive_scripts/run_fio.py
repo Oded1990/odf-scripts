@@ -1,4 +1,4 @@
-from interactive_scripts.helpers import (
+from helpers.helpers import (
     create_new_prject,
     create_pvc,
     create_pref_pod,
