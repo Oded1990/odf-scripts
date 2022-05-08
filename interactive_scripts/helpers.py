@@ -1,6 +1,7 @@
 import logging
 import sys
 
+from helpers import constants
 from infra_cmd.infra_cmd import (
     yaml_to_dict,
     dict_to_yaml,
@@ -15,13 +16,126 @@ stream.setLevel(logging.DEBUG)
 log.addHandler(stream)
 
 
+def input_string(string_text, default_value, expected_string=()):
+    while True:
+        string_var = str(input(f"{string_text} ({default_value}): ") or default_value)
+        string_var = string_var.replace(" ", "")
+        if string_var in expected_string or len(expected_string) == 0:
+            return string_var
+
+
 def create_new_prject():
-    project_name = str(input("Enter project name (fio-test) : ") or "fio-test")
+    project_name = input_string(
+        string_text="Enter project name expected ",
+        default_value="fio-project",
+    )
     send_cmd(f"oc new-project {project_name}")
     return project_name
 
 
 def create_pvc(project_name=None):
+    pvc_name = str(input("Enter pvc name (pvc-test) : ") or "pvc-test")
+    pvc_mode_number = str(
+        input(
+            "Choose pvc access Mode (RWO)\n"
+            "1.ACCESS_MODE_RWO\n"
+            "2.ACCESS_MODE_ROX\n"
+            "3.ACCESS_MODE_RWX\n"
+            "Choose pvc access Mode:"
+        )
+        or "1"
+    )
+    if pvc_mode_number == "1":
+        pvc_mode = "ReadWriteOnce"
+    elif pvc_mode_number == "2":
+        pvc_mode = "ReadOnlyMany"
+    elif pvc_mode_number == "3":
+        pvc_mode = "ReadWriteMany"
+    pvc_capacity_number = str(
+        input("Enter pvc capacity [only number] in Gi (5Gi) : ") or "5"
+    )
+    pvc_capacity = f"{pvc_capacity_number}Gi"
+    storage_class_name_number = str(
+        input(
+            "Choose storageclass name or write the sc name "
+            "(ocs-storagecluster-ceph-rbd)\n"
+            "1.ocs-storagecluster-ceph-rbd\n"
+            "2.ocs-storagecluster-cephfs\n"
+            "other[write storage class name]\n"
+            "Choose storage class name:"
+        )
+        or "1"
+    )
+    if storage_class_name_number == "1":
+        storage_class_name = "ocs-storagecluster-ceph-rbd"
+    elif storage_class_name_number == "2":
+        storage_class_name = "ocs-storagecluster-cephfs"
+    else:
+        storage_class_name = storage_class_name_number
+
+    pvc_dic = yaml_to_dict("configurations/pvc.yaml")
+    pvc_dic["metadata"]["name"] = pvc_name
+    pvc_dic["metadata"]["namespace"] = project_name
+    pvc_dic["spec"]["accessModes"] = [pvc_mode]
+    pvc_dic["spec"]["storageClassName"] = storage_class_name
+    pvc_dic["spec"]["resources"]["requests"]["storage"] = pvc_capacity
+    pvc_yaml = dict_to_yaml(pvc_dic)
+    cmd = f"oc -n {project_name} create -f {pvc_yaml} -o yaml"
+    send_cmd(cmd=cmd)
+    cmd = f"oc -n {project_name} get pvc {pvc_name}"
+    wait_expected_result(
+        sleep=3,
+        timeout=30,
+        cmd=cmd,
+        expected_string="Bound",
+        expected_error=f"pvc {pvc_name} does not on Bound state",
+    )
+    return pvc_name
+
+
+def create_pvc_interactive():
+    pvc_name = str(input("Enter pvc name (pvc-test) : ") or "pvc-test")
+    pvc_mode_number = str(
+        input(
+            "Choose pvc access Mode (RWO)\n"
+            "1.ACCESS_MODE_RWO\n"
+            "2.ACCESS_MODE_ROX\n"
+            "3.ACCESS_MODE_RWX\n"
+            "Choose pvc access Mode:"
+        )
+        or "1"
+    )
+    if pvc_mode_number == "1":
+        pvc_mode = "ReadWriteOnce"
+    elif pvc_mode_number == "2":
+        pvc_mode = "ReadOnlyMany"
+    else:
+        pvc_mode = "ReadWriteMany"
+    pvc_capacity_number = str(
+        input("Enter pvc capacity [only number] in Gi (5Gi) : ") or "5"
+    )
+    pvc_capacity = f"{pvc_capacity_number}Gi"
+    storage_class_name_number = str(
+        input(
+            "Choose storageclass name or write the sc name "
+            "(ocs-storagecluster-ceph-rbd)\n"
+            "1.ocs-storagecluster-ceph-rbd\n"
+            "2.ocs-storagecluster-cephfs\n"
+            "other[write storage class name]\n"
+            "Choose storage class name:"
+        )
+        or "1"
+    )
+    if storage_class_name_number == "1":
+        storage_class_name = "ocs-storagecluster-ceph-rbd"
+    elif storage_class_name_number == "2":
+        storage_class_name = "ocs-storagecluster-cephfs"
+    else:
+        storage_class_name = storage_class_name_number
+    return pvc_name, pvc_mode, pvc_capacity, storage_class_name
+
+
+def create_multiple_pvc(project_name=None):
     pvc_name = str(input("Enter pvc name (pvc-test) : ") or "pvc-test")
     pvc_mode_number = str(
         input(
@@ -158,3 +272,45 @@ def get_ceph_versions():
     tool_pod_name = get_ceph_tool_pod_name()
     cmd = f"oc rsh -n openshift-storage {tool_pod_name} ceph versions"
     return send_cmd(cmd=cmd, print_cmd=True)
+
+
+def get_worker_node_names():
+    cmd = "oc get nodes | grep worker | awk '{print $1}'"
+    workers = send_cmd(cmd=cmd, print_cmd=False)
+    f = filter(None, workers.split("\n"))
+    return list(f)
+
+
+def wait_pods_status(
+    namespace=constants.OPENSHIFT_STORAGE_NAMESPACE,
+    pattern="",
+    number_of_pods=1,
+    expected_mode=constants.STATUS_RUNNING,
+    sleep=20,
+    timeout=120,
+):
+    while timeout > 0:
+        if len(pattern) > 0:
+            output = send_cmd(f"oc get pods -n {namespace} | grep {pattern}")
+        else:
+            output = send_cmd(f"oc get pods -n {namespace}")
+        if number_of_pods == count_freq(pat=expected_mode, txt=output):
+            return True
+        timeout -= sleep
+    return False
+
+
+def count_freq(pat, txt):
+    pat_len = len(pat)
+    txt_len = len(txt)
+    res = 0
+    for i in range(txt_len - pat_len + 1):
+        j = 0
+        while j < pat_len:
+            if txt[i + j] != pat[j]:
+                break
+            j += 1
+        if j == pat_len:
+            res += 1
+            j = 0
+    return res

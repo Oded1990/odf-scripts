@@ -52,3 +52,10 @@ def dict_to_yaml(data=None):
     with open(path, "w") as outfile:
         yaml.dump(data, outfile, default_flow_style=False)
     return path
+
+
+def logging(text="", type="info"):
+    if type != "info":
+        log.error(text)
+    else:
+        log.info(text)
