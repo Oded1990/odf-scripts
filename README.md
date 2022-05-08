@@ -11,5 +11,5 @@ python3 -m venv venv
 
 pip install -r requirements.txt
 
-python3 interactive_scripts/run_fio.py
+python3 interactive_scripts/<script-name>.py
  
