@@ -314,3 +314,15 @@ def count_freq(pat, txt):
             res += 1
             j = 0
     return res
+
+
+def input_func(text="", default_value="", is_num=True, expected_values=None):
+    while True:
+        input_value = str(input(f"{text} ({default_value}): ") or default_value)
+        if is_num and not input_value.isnumeric():
+            log.info("Please enter number")
+            continue
+        if expected_values and input_value not in expected_values:
+            log.info(f"Please enter expected values {expected_values}")
+            continue
+        return input_value

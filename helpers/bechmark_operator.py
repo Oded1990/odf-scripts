@@ -6,7 +6,7 @@ from subprocess import run
 from infra_cmd.infra_cmd import logging, send_cmd
 from helpers import constants
 from infra_cmd.infra_cmd import yaml_to_dict, dict_to_yaml
-from interactive_scripts.helpers import wait_pods_status
+from helpers.helpers import wait_pods_status
 
 
 class BenchmarkOperatorFIO(object):
@@ -34,6 +34,7 @@ class BenchmarkOperatorFIO(object):
         self.crd_data["spec"]["workload"]["args"]["servers"] = servers
 
     def clone_benchmark_operator(self):
+        logging(text=f"clone {constants.BMO_REPO} to {self.local_repo}")
         git.Repo.clone_from(constants.BMO_REPO, self.local_repo)
 
     def deploy(self):
@@ -44,7 +45,10 @@ class BenchmarkOperatorFIO(object):
 
     def create_benchmark_operator(self):
         benchmark_yaml = dict_to_yaml(self.crd_data)
-        send_cmd(cmd=f"oc create -f {benchmark_yaml}")
+        send_cmd(
+            cmd=f"oc -n {constants.BENCHMARK_OPERATOR_NAMESPACE} create -f {benchmark_yaml} -o yaml",
+            print_cmd=True,
+        )
 
     def wait_for_wl_to_complete(self):
         if not wait_pods_status(
@@ -75,7 +79,6 @@ class BenchmarkOperatorFIO(object):
         """
         # Reset namespace to default
         send_cmd("oc project openshift-storage")
-        logging().info("Delete the benchmark-operator project")
+        logging("Delete the benchmark-operator project")
         run("make undeploy", shell=True, check=True, cwd=self.local_repo)
-        send_cmd(f"oc delete project {constants.BENCHMARK_OPERATOR_NAMESPACE}")
         time.sleep(10)
