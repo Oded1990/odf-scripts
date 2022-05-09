@@ -50,28 +50,73 @@ class BenchmarkOperatorFIO(object):
             print_cmd=True,
         )
 
-    def wait_for_wl_to_complete(self):
+    def wait_for_controller_to_running(self):
+        if not wait_pods_status(
+            namespace=constants.BENCHMARK_OPERATOR_NAMESPACE,
+            pattern="controller",
+            number_of_pods=1,
+            expected_mode=constants.STATUS_RUNNING,
+            sleep=10,
+            timeout=60,
+        ):
+            logging(
+                text=f"fio-server pod did not move to running state after {self.timeout_completed} sec",
+                type="error",
+            )
+            out = send_cmd(
+                cmd=f"oc get pods -n {constants.BENCHMARK_OPERATOR_NAMESPACE} |grep controller"
+            )
+            raise Exception(
+                f"fio-server pod did not move to running state after {self.timeout_completed} sec {out}"
+            )
+
+    def wait_for_servers_to_running(self):
+        if not wait_pods_status(
+            namespace=constants.BENCHMARK_OPERATOR_NAMESPACE,
+            pattern="server",
+            number_of_pods=int(self.crd_data["spec"]["workload"]["args"]["servers"]),
+            expected_mode=constants.STATUS_RUNNING,
+            sleep=40,
+            timeout=200,
+        ):
+            logging(
+                text=f"fio-server pod did not move to running state after {self.timeout_completed} sec",
+                type="error",
+            )
+            out = send_cmd(
+                cmd=f"oc get pods -n {constants.BENCHMARK_OPERATOR_NAMESPACE} |grep server"
+            )
+            raise Exception(
+                f"fio-server pod did not move to running state after {self.timeout_completed} sec {out}"
+            )
+
+    def wait_for_client_to_complete(self):
         if not wait_pods_status(
             namespace=constants.BENCHMARK_OPERATOR_NAMESPACE,
             pattern="client",
             number_of_pods=1,
             expected_mode=constants.STATUS_COMPLETED,
-            sleep=40,
+            sleep=10,
             timeout=self.timeout_completed,
         ):
             logging(
                 text=f"fio-client pod did not move to running state after {self.timeout_completed} sec",
                 type="error",
             )
+            out = send_cmd(
+                cmd=f"oc get pods -n {constants.BENCHMARK_OPERATOR_NAMESPACE} |grep client"
+            )
             raise Exception(
-                f"fio-client pod did not move to running state after {self.timeout_completed} sec"
+                f"fio-client pod did not move to running state after {self.timeout_completed} sec {out}"
             )
 
     def run_fio_benchmark_operator(self):
         self.clone_benchmark_operator()
         self.deploy()
+        self.wait_for_controller_to_running()
         self.create_benchmark_operator()
-        self.wait_for_wl_to_complete()
+        self.wait_for_servers_to_running()
+        self.wait_for_client_to_complete()
 
     def cleanup(self):
         """

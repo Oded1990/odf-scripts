@@ -15,7 +15,7 @@ stream = logging.StreamHandler(sys.stdout)
 
 def send_cmd(cmd=None, print_cmd=False, print_output=True):
     if print_cmd:
-        logging.info(cmd)
+        log.info(cmd)
     returned_text = subprocess.check_output(cmd, shell=True, universal_newlines=True)
     if print_output:
         log.info(returned_text)

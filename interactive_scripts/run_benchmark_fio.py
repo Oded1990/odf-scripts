@@ -87,6 +87,8 @@ Run teardown at the end of the the script
     )
     try:
         benchmark_operator_obj.run_fio_benchmark_operator()
+        if run_teardown:
+            benchmark_operator_obj.cleanup()
     except Exception as e:
         logging(text=e, type="error")
         if run_teardown:

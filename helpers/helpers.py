@@ -1,5 +1,7 @@
 import logging
 import sys
+import subprocess
+import time
 
 from helpers import constants
 from infra_cmd.infra_cmd import (
@@ -291,11 +293,24 @@ def wait_pods_status(
 ):
     while timeout > 0:
         if len(pattern) > 0:
-            output = send_cmd(f"oc get pods -n {namespace} | grep {pattern}")
+            output = subprocess.run(
+                f"oc get pods -n {namespace} |grep {pattern}",
+                shell=True,
+                check=False,
+                stdout=subprocess.PIPE,
+            )
         else:
-            output = send_cmd(f"oc get pods -n {namespace}")
-        if number_of_pods == count_freq(pat=expected_mode, txt=output):
+            output = subprocess.run(
+                f"oc get pods -n {namespace}",
+                shell=True,
+                check=False,
+                stdout=subprocess.PIPE,
+            )
+
+        output_str = str(output.stdout)
+        if number_of_pods == count_freq(pat=expected_mode, txt=output_str):
             return True
+        time.sleep(sleep)
         timeout -= sleep
     return False
 
